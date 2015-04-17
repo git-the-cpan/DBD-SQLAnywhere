@@ -1,8 +1,6 @@
-# *****************************************************
-# Copyright (c) 2007-2010 iAnywhere Solutions, Inc.
-# Portions copyright (c) 2007-2010 Sybase, Inc.
-# All rights reserved. All unpublished rights reserved.
-# *****************************************************
+# ***************************************************************************
+# Copyright (c) 2015 SAP SE or an SAP affiliate company. All rights reserved.
+# ***************************************************************************
 # Makefile.PL for SQL Anywhere DBD driver
 
 use ExtUtils::MakeMaker;
@@ -58,7 +56,7 @@ my %opts = (
 );
 
 if ($ExtUtils::MakeMaker::VERSION >= 5.43) {
-    $opts{AUTHOR} = 'John Smirnios (smirnios@sybase.com), Tim Bunce';
+    $opts{AUTHOR} = 'John Smirnios (john.smirnios@sap.com), Tim Bunce';
     $opts{ABSTRACT} = 'SQL Anywhere DBD driver';
     $opts{PREREQ_PM} = { DBI => 1.51, 'Test::Simple' => 0.41 };
     $opts{CAPI} = 'TRUE' if $Config{archname} =~ /-object\b/i;
@@ -132,7 +130,10 @@ $opts{DEFINE} .= " -D_SACAPI_VERSION=2";
 if( $Config{osname} eq "MSWin32" ) {
     $opts{INC}  .= qq( -I"$dbi_arch_dir" );
     $opts{DEFINE} .= ' -DWINNT -D_CRT_SECURE_NO_DEPRECATE';
-    $opts{LD} = "\$(PERL) dolink.pl \$@";
+# The following doesn't work if ActivePerl was built with MinGW (gcc)
+# It was added so that a manifest would be added to the DLL when building with VS2005 but it
+# doesn't seem to be needed anymore.
+#    $opts{LD} = "\$(PERL) dolink.pl \$@";
 } else {
     $opts{INC}  .= "-I$dbi_arch_dir ";
     $opts{DEFINE} .= ' -DUNIX';

@@ -1,16 +1,20 @@
 #!/usr/local/bin/perl -w
-# *****************************************************
-# Copyright (c) 2005-2010 iAnywhere Solutions, Inc.
-# Portions copyright (c) 2005-2010 Sybase, Inc.
-# All rights reserved. All unpublished rights reserved.
-# *****************************************************
+# ***************************************************************************
+# Copyright (c) 2015 SAP SE or an SAP affiliate company. All rights reserved.
+# ***************************************************************************
 # This sample code is provided AS IS, without warranty or liability of any kind.
 #
 # You may use, reproduce, modify and distribute this sample code without
 # limitation,  on the condition that you retain the foregoing copyright
-# notice and disclaimer as to the original iAnywhere code.
+# notice and disclaimer as to the original code.
 #
 # *******************************************************************
+#
+# This sample program contains a hard-coded userid and password
+# to connect to the demo database. This is done to simplify the
+# sample program. The use of hard-coded passwords is strongly
+# discouraged in production code.  A best practice for production
+# code would be to prompt the user for the userid and password.
 
 use DBI;
 use strict;

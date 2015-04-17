@@ -1,25 +1,26 @@
-//====================================================
+// ***************************************************************************
+// Copyright (c) 2015 SAP SE or an SAP affiliate company. All rights reserved.
+// ***************************************************************************
 //
-//      Copyright 2008-2010 iAnywhere Solutions, Inc.
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//   Licensed under the Apache License, Version 2.0 (the "License");
-//   you may not use this file except in compliance with the License.
-//   You may obtain a copy of the License at
+// http://www.apache.org/licenses/LICENSE-2.0
 //
-//   http://www.apache.org/licenses/LICENSE-2.0
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //
-//   Unless required by applicable law or agreed to in writing, software
-//   distributed under the License is distributed on an "AS IS" BASIS,
-//   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 //
-//   See the License for the specific language governing permissions and
-//   limitations under the License.
+// While not a requirement of the license, if you do modify this file, we
+// would appreciate hearing about it. Please email
+// sqlany_interfaces@sybase.com
 //
-//   While not a requirement of the license, if you do modify this file, we
-//   would appreciate hearing about it. Please email
-//   sqlany_interfaces@sybase.com
-//
-//====================================================
+// ***************************************************************************
+
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -65,18 +66,18 @@ void unloadLibrary( void * handle )
 /**********************************/
 {
 #if defined( _WIN32 )
-    FreeLibrary( handle );
+    FreeLibrary( (HMODULE)handle );
 #else
     dlclose( handle );
 #endif
 }
 
 static 
-void * findSymbol( void * dll_handle, char * name )
-/**************************************************/
+void * findSymbol( void * dll_handle, const char * name )
+/*******************************************************/
 {
 #if defined( _WIN32 )
-    return GetProcAddress( dll_handle, name );
+    return GetProcAddress( (HMODULE)dll_handle, name );
 #else
     return dlsym( dll_handle, name );
 #endif
@@ -162,6 +163,17 @@ loaded:
     LookupSymbol( api, sqlany_make_connection_ex );
     LookupSymbol( api, sqlany_client_version_ex );
     LookupSymbolAndCheck( api, sqlany_cancel );
+#endif
+#if _SACAPI_VERSION+0 >= 3
+    /* We don't report an error if we don't find the v3 entry points.
+       That allows the calling app to revert to v1 */
+    LookupSymbol( api, sqlany_register_callback );
+#endif
+#if _SACAPI_VERSION+0 >= 4
+    /* We don't report an error if we don't find the v4 entry points.
+       That allows the calling app to revert to v1 */
+    LookupSymbol( api, sqlany_get_bind_param_info_ex );
+    LookupSymbol( api, sqlany_get_column_info_ex );
 #endif
 
     api->initialized = 1;

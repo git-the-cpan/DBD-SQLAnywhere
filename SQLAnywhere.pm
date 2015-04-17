@@ -1,6 +1,6 @@
-#====================================================
-#
-#      Copyright 2008-2010 iAnywhere Solutions, Inc.
+# ***************************************************************************
+# Copyright (c) 2015 SAP SE or an SAP affiliate company. All rights reserved.
+# ***************************************************************************
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ use warnings;
     use DynaLoader ();
     use Exporter ();
 
-    our $VERSION = '2.08';
+    our $VERSION = '2.12';
     our @ISA = qw(DynaLoader Exporter);
     our %EXPORT_TAGS = (
 	asa_types => [ qw(
@@ -615,14 +615,14 @@ L<Test::Simple>
 
 =head1 AUTHOR
 
-John Smirnios (smirnios@sybase.com).
+John Smirnios (john.smirnios@sap.com).
 
 Based on a driver written by Tim Bunce.
 
 =head1 COPYRIGHT
 
 Portions Copyright (c) 1994,1995,1996           Tim Bunce
-Portions Copyright (c) 1996-2010		iAnywhere Solutions, Inc.
+Portions Copyright (c) 2015			SAP SE or an SAP affiliate company
 
 For license information, please see license.txt included in this
 distribution.

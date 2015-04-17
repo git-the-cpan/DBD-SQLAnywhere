@@ -4,6 +4,12 @@
 
 # Base DBD Driver Test
 
+# This sample program contains a hard-coded userid and password
+# to connect to the demo database. This is done to simplify the
+# sample program. The use of hard-coded passwords is strongly
+# discouraged in production code.  A best practice for production
+# code would be to prompt the user for the userid and password.
+
 use lib 'blib/lib';
 use lib 'blib/arch';
 use strict;

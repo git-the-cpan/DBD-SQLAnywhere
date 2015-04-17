@@ -1,26 +1,25 @@
-/* ====================================================
- * 
- *       Copyright 2008-2010 iAnywhere Solutions, Inc.
- * 
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
- * 
- *    http://www.apache.org/licenses/LICENSE-2.0
- * 
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * 
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
- * 
- *    While not a requirement of the license, if you do modify this file, we
- *    would appreciate hearing about it. Please email
- *    sqlany_interfaces@sybase.com
- * 
- * ====================================================
- */
+// ***************************************************************************
+// Copyright (c) 2015 SAP SE or an SAP affiliate company. All rights reserved.
+// ***************************************************************************
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+// While not a requirement of the license, if you do modify this file, we
+// would appreciate hearing about it. Please email
+// sqlany_interfaces@sybase.com
+//
+// ***************************************************************************
 
 #ifndef SACAPIDLL_H
 #define SACAPIDLL_H
@@ -77,6 +76,13 @@ typedef void (*sqlany_clear_error_func)( a_sqlany_connection * sqlany_conn );
     typedef a_sqlany_connection *(*sqlany_make_connection_ex_func)( a_sqlany_interface_context *context, void *arg );
     typedef sacapi_bool (*sqlany_client_version_ex_func)( a_sqlany_interface_context *context, char *buffer, size_t len );
     typedef void (*sqlany_cancel_func)( a_sqlany_connection * sqlany_conn );
+#endif
+#if _SACAPI_VERSION+0 >= 3
+    typedef sacapi_bool (*sqlany_register_callback_func)( a_sqlany_connection * sqlany_conn, a_sqlany_callback_type index, SQLANY_CALLBACK_PARM callback );
+#endif
+#if _SACAPI_VERSION+0 >= 4
+    typedef sacapi_bool (*sqlany_get_bind_param_info_ex_func)( a_sqlany_stmt * sqlany_stmt, sacapi_u32 index, a_sqlany_bind_param_info * info, size_t size );
+    typedef sacapi_bool (*sqlany_get_column_info_ex_func)( a_sqlany_stmt * sqlany_stmt, sacapi_u32 col_index, a_sqlany_column_info * buffer, size_t size );
 #endif
 
 #if defined( __cplusplus )
@@ -264,7 +270,19 @@ typedef struct SQLAnywhereInterface {
      */
     function( sqlany_cancel );		
 #endif
-
+#if _SACAPI_VERSION+0 >= 3
+    /** Pointer to ::sqlany_register_callback() function.
+     */
+    function( sqlany_register_callback );
+#endif
+#if _SACAPI_VERSION+0 >= 4
+    /** Pointer to ::sqlany_get_column_info_ex() function.
+     */
+    function( sqlany_get_column_info_ex );	
+    /** Pointer to ::sqlany_get_bind_param_info_ex() function.
+     */
+    function( sqlany_get_bind_param_info_ex );
+#endif
 } SQLAnywhereInterface;
 #undef function
 
@@ -284,17 +302,9 @@ typedef struct SQLAnywhereInterface {
  * the interface attempts to load the DLL directly (this relies on the environment being
  * setup correctly).
  *
- * To view examples of the sqlany_initialize_interface method in use, see the following topics:
- *
- * <ul>
- * <li>\salink{connecting.cpp, "http://dcx.sybase.com/selectproduct?turl=1201en/dbprogramming/pg-c-api-connecting-cpp.html", "programming", "pg-c-api-connecting-cpp"} 
- * <li>\salink{dbcapi_isql.cpp, "http://dcx.sybase.com/selectproduct?turl=1201en/dbprogramming/pg-c-api-dbcapi-isql-cpp.html", "programming", "pg-c-api-dbcapi-isql-cpp"}
- * <li>\salink{fetching_a_result_set.cpp, "http://dcx.sybase.com/selectproduct?turl=1201en/dbprogramming/pg-c-api-fetching-a-result-set-cpp.html", "programming", "pg-c-api-fetching-a-result-set-cpp"}
- * <li>\salink{fetching_multiple_from_sp.cpp, "http://dcx.sybase.com/selectproduct?turl=1201en/dbprogramming/pg-c-api-fetching-multiple-from-sp-cpp.html", "programming", "pg-c-api-fetching-multiple-from-sp-cpp"}
- * <li>\salink{preparing_statements.cpp, "http://dcx.sybase.com/selectproduct?turl=1201en/dbprogramming/pg-c-api-preparing-statements-cpp.html", "programming", "pg-c-api-preparing-statements-cpp"}
- * <li>\salink{send_retrieve_full_blob.cpp, "http://dcx.sybase.com/selectproduct?turl=1201en/dbprogramming/pg-c-api-send-retrieve-full-blob-cpp.html", "programming", "pg-c-api-send-retrieve-full-blob-cpp"}
- * <li>\salink{send_retrieve_part_blob.cpp, "http://dcx.sybase.com/selectproduct?turl=1201en/dbprogramming/pg-c-api-send-retrieve-part-blob-cpp.html", "programming", "pg-c-api-send-retrieve-part-blob-cpp"}
- * </ul>
+ * Examples of how the sqlany_initialize_interface method is used can be found in the
+ * C API examples in the <dfn>sdk\\dbcapi\\examples</dfn> directory of your SQL 
+ * Anywhere installation.
  *
  * \param api An API structure to initialize.
  * \param optional_path_to_dll An optional argument that specifies a path to the SQL Anywhere C API DLL.
@@ -312,17 +322,9 @@ int sqlany_initialize_interface( SQLAnywhereInterface * api, const char * option
  *
  * Use this method to finalize and free resources associated with the SQL Anywhere C API DLL.
  *
- * To view examples of the sqlany_finalize_interface method in use, see the following topics:
- *
- * <ul>
- * <li>\salink{connecting.cpp, "http://dcx.sybase.com/selectproduct?turl=1201en/dbprogramming/pg-c-api-connecting-cpp.html", "programming", "pg-c-api-connecting-cpp"} 
- * <li>\salink{dbcapi_isql.cpp, "http://dcx.sybase.com/selectproduct?turl=1201en/dbprogramming/pg-c-api-dbcapi-isql-cpp.html", "programming", "pg-c-api-dbcapi-isql-cpp"}
- * <li>\salink{fetching_a_result_set.cpp, "http://dcx.sybase.com/selectproduct?turl=1201en/dbprogramming/pg-c-api-fetching-a-result-set-cpp.html", "programming", "pg-c-api-fetching-a-result-set-cpp"}
- * <li>\salink{fetching_multiple_from_sp.cpp, "http://dcx.sybase.com/selectproduct?turl=1201en/dbprogramming/pg-c-api-fetching-multiple-from-sp-cpp.html", "programming", "pg-c-api-fetching-multiple-from-sp-cpp"}
- * <li>\salink{preparing_statements.cpp, "http://dcx.sybase.com/selectproduct?turl=1201en/dbprogramming/pg-c-api-preparing-statements-cpp.html", "programming", "pg-c-api-preparing-statements-cpp"}
- * <li>\salink{send_retrieve_full_blob.cpp, "http://dcx.sybase.com/selectproduct?turl=1201en/dbprogramming/pg-c-api-send-retrieve-full-blob-cpp.html", "programming", "pg-c-api-send-retrieve-full-blob-cpp"}
- * <li>\salink{send_retrieve_part_blob.cpp, "http://dcx.sybase.com/selectproduct?turl=1201en/dbprogramming/pg-c-api-send-retrieve-part-blob-cpp.html", "programming", "pg-c-api-send-retrieve-part-blob-cpp"}
- * </ul>
+ * Examples of how the sqlany_finalize_interface method is used can be found in the
+ * C API examples in the <dfn>sdk\\dbcapi\\examples</dfn> directory of your SQL 
+ * Anywhere installation.
  *
  * \param api An initialized structure to finalize.
  */

@@ -1,3 +1,27 @@
+Changes in DBD::SQLAnywhere 2.12 17 Apr 2015
+ Fixed compliation problems with versions of ActivePerl that use MinGW, updated README.
+ Fixed statement preparsing to handle comments when looking for host variables.
+ Fixed problem with using "long long" with old Microsoft compilers.
+ Fixed some compiler warnings.
+ 
+Changes in DBD::SQLAnywhere 2.11 27 Apr 2012
+ dbd_st_fetch did not return Nullav (end-of-cursor indication) when attempting
+   to fetch from a statement that is execute-only and can't return any
+   row (such as INSERT).
+
+Changes in DBD::SQLAnywhere 2.10 15 September 2011
+ Corrected error reporting from more_results().
+
+Changes in DBD::SQLAnywhere 2.09 23rd August 2011
+ Added support for more_results() which permits access to multiple result sets.
+ Example:
+    $sth->execute();
+    do {
+	while (my $data = $sth->fetch) {
+	    print "@$data\n";
+	}
+    } while (defined $sth->more_results());
+
 Changes in DBD::SQLAnywhere 2.08 23rd November 2010, 10th January 2011
   Prepare for removal of PERL_POLLUTE support.
   Moved usage documentation into SQLAnywhere.pm as POD documentation. README

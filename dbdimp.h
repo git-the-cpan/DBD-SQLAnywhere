@@ -1,6 +1,6 @@
-//====================================================
-//
-//      Copyright 2008-2010 iAnywhere Solutions, Inc.
+// ***************************************************************************
+// Copyright (c) 2015 SAP SE or an SAP affiliate company. All rights reserved.
+// ***************************************************************************
 //
 //   Licensed under the Apache License, Version 2.0 (the "License");
 //   you may not use this file except in compliance with the License.
@@ -144,6 +144,7 @@ void ssa_error( pTHX_ SV *h, a_sqlany_connection *sqlca, int sqlcode, char *what
 #define dbd_st_rows		sqlanywhere_st_rows
 #define dbd_st_execute		sqlanywhere_st_execute
 #define dbd_st_fetch		sqlanywhere_st_fetch
+#define dbd_st_more_results	sqlanywhere_st_more_results
 #define dbd_st_finish		sqlanywhere_st_finish
 #define dbd_st_destroy		sqlanywhere_st_destroy
 #define dbd_st_blob_read	sqlanywhere_st_blob_read

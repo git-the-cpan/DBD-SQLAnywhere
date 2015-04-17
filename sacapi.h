@@ -1,26 +1,25 @@
-/* ====================================================
- * 
- *       Copyright 2008-2010 iAnywhere Solutions, Inc.
- * 
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
- * 
- *    http://www.apache.org/licenses/LICENSE-2.0
- * 
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * 
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
- * 
- *    While not a requirement of the license, if you do modify this file, we
- *    would appreciate hearing about it. Please email
- *    sqlany_interfaces@sybase.com
- * 
- * ====================================================
- */
+// ***************************************************************************
+// Copyright (c) 2015 SAP SE or an SAP affiliate company. All rights reserved.
+// ***************************************************************************
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+// While not a requirement of the license, if you do modify this file, we
+// would appreciate hearing about it. Please email
+// sqlany_interfaces@sybase.com
+//
+// ***************************************************************************
 
 #ifndef SACAPI_H 
 #define SACAPI_H
@@ -28,31 +27,50 @@
 /** \mainpage SQL Anywhere C API
  *
  * \section intro_sec Introduction
- * The purpose of this API is to simplify creating C/C++ wrapper drivers for various interpreted languages
- * such as PHP, Perl, Python, Ruby, and others. This API layer sits on top of DBLIB and was implemented
- * using Embedded SQL. This API is not a replacement of DBLIB. It is just a way to simplify creating applications
- * from C/C++ code without having to learn all the details of Embedded SQL.
+ * The SQL Anywhere C application programming interface (API) is a data
+ * access API for the C / C++ languages. The C API specification defines
+ * a set of functions, variables and conventions that provide a consistent
+ * database interface independent of the actual database being used. Using
+ * the SQL Anywhere C API, your C / C++ applications have direct access to
+ * SQL Anywhere database servers.
+ *
+ * The SQL Anywhere C API simplifies the creation of C and C++ wrapper
+ * drivers for several interpreted programming languages including PHP,
+ * Perl, Python, and Ruby. The SQL Anywhere C API is layered on top of the
+ * DBLIB package and it was implemented with Embedded SQL.
+ *
+ * Although it is not a replacement for DBLIB, the SQL Anywhere C API
+ * simplifies the creation of applications using C and C++. You do not need
+ * an advanced knowledge of embedded SQL to use the SQL Anywhere C API.
  *
  * \section distribution Distribution of the API
- * The API is built as a DLL (shared object on UNIX). The name of the DLL is \b dbcapi.dll 
- * ( \b libdbcapi.so on UNIX). This DLL is linked statically to DBLIB of the SQL Anywhere version that it was
- * built against. When dbcapi.dll is loaded, the corresponding dblibX.dll is loaded by the OS. Applications that
- * interface with dbcapi.dll can either link directly to it or load it dynamically. For dynamic
- * loading of the DLL, please refer to the Dynamic Loading section below.
+ * The API is built as a dynamic link library (DLL) (\b dbcapi.dll) on
+ * Microsoft Windows systems and as a shared object (\b libdbcapi.so) on
+ * Unix systems. The DLL is statically linked to the DBLIB package of the
+ * SQL Anywhere version on which it is built. When the dbcapi.dll file is
+ * loaded, the corresponding dblibX.dll file is loaded by the operating
+ * system. Applications using dbcapi.dll can either link directly to it
+ * or load it dynamically. For more information about dynamic loading, see
+ * the section "Dynamically Loading the DLL".
  *
- * The file sacapi.h is the main header file for the API. It describes all the data types and the entry
- * points of the API. 
+ * Descriptions of the SQL Anywhere C API data types and entry points are
+ * provided in the main header file (\b sacapi.h).
  *
  * \section dynamic_loading Dynamically Loading the DLL
- * The header file sacapidll.h contains the proper code to dynamically load the DLL. An application would 
- * need to include the sacapidll.h header file and compile in sacapidll.c with their source. 
- * sqlany_initialize_interface() can be used to dynamically load the DLL and lookup all the entry points.
+ * The code to dynamically load the DLL is contained in the sacapidll.c
+ * source file. Applications must use the sacapidll.h header file and
+ * include the source code in sacapidll.c. You can use the
+ * sqlany_initialize_interface method to dynamically load the DLL and
+ * look up the entry points. Examples are provided with the SQL Anywhere
+ * installation.
  *
  * \section threading_support Threading Support
- * The C API library is thread-unaware, meaning that the library does not perform any tasks that require
- * mutual exclusion. In order to allow the library to work in threaded applications, there is only one rule to
- * follow: <b>no more than one request is allowed on a single connection </b>. With this rule, the application 
- * is responsible for doing mutual exclusion when accessing any connection-specific resource. This includes 
+ * The C API library is thread-unaware, meaning that the library does not
+ * perform any tasks that require mutual exclusion. In order to allow the
+ * library to work in threaded applications, there is only one rule to
+ * follow: <b>no more than one request is allowed on a single connection </b>.
+ * With this rule, the application is responsible for doing mutual exclusion
+ * when accessing any connection-specific resource. This includes 
  * connection handles, prepared statements, and result set objects.
  *
  * \version 2.0
@@ -63,13 +81,29 @@
  * This file describes all the data types and entry points of the API.
  */
 
-/** Defines to indicate the API versions
+/** Version 1 was the initial version of the C/C++ API.
+ *
+ * You must define _SACAPI_VERSION as 1 or higher for this functionality.
  */
 #define SQLANY_API_VERSION_1		1
 
 /** Version 2 introduced the "_ex" functions and the ability to cancel requests.
+ *
+ * You must define _SACAPI_VERSION as 2 or higher for this functionality.
  */
 #define SQLANY_API_VERSION_2		2
+
+/** Version 3 introduced the "callback" function.
+ *
+ * You must define _SACAPI_VERSION as 3 or higher for this functionality.
+ */
+#define SQLANY_API_VERSION_3		3
+
+/** Version 4 introduced NCHAR support.
+ *
+ * You must define _SACAPI_VERSION as 4 or higher for this functionality.
+ */
+#define SQLANY_API_VERSION_4		4
 
 /** Returns the minimal error buffer size.
  */
@@ -91,24 +125,31 @@ typedef struct a_sqlany_connection a_sqlany_connection;
  */
 typedef struct a_sqlany_stmt	   a_sqlany_stmt;
 
-#ifdef WIN32 
-/** A portable 32-bit signed value */
-typedef __int32  		sacapi_i32;
-/** A portable 32-bit unsigned value */
-typedef unsigned __int32 	sacapi_u32;
-/** A portable boolean value */
-typedef sacapi_i32 		sacapi_bool;
-#else
 /** A portable 32-bit signed value */
 typedef signed int   	sacapi_i32;
 /** A portable 32-bit unsigned value */
 typedef unsigned int 	sacapi_u32;
 /** A portable boolean value */
 typedef sacapi_i32 	sacapi_bool;
-#endif
 
 // TODO:Character set issues
 
+/** The run-time calling convention in use (Windows only).
+ */
+#ifdef _WIN32
+    #define _sacapi_entry_	    __stdcall
+#endif
+#ifndef _sacapi_entry_
+    #define _sacapi_entry_
+#endif
+
+/** Callback function type
+ */
+#define SQLANY_CALLBACK	    _sacapi_entry_
+
+/** Parameter type for sqlany_register_callback function used to specify the address of the callback routine.
+ */
+typedef int (SQLANY_CALLBACK *SQLANY_CALLBACK_PARM)();
 
 /** Specifies the data type being passed in or retrieved.
  */
@@ -142,13 +183,15 @@ typedef enum a_sqlany_data_type
 
 /** Returns a description of the attributes of a data value.
  *
- * To view examples of the a_sqlany_data_value structure in use, see the following topics:
+ * To view examples of the a_sqlany_data_value structure in use,
+ * see any of the following sample files in the <dfn>sdk\\dbcapi\\examples</dfn> directory
+ * of your SQL Anywhere installation.
  *
  * <ul>
- * <li>\salink{dbcapi_isql.cpp, "http://dcx.sybase.com/selectproduct?turl=1201en/dbprogramming/pg-c-api-dbcapi-isql-cpp.html", "programming", "pg-c-api-dbcapi-isql-cpp"}
- * <li>\salink{fetching_a_result_set.cpp, "http://dcx.sybase.com/selectproduct?turl=1201en/dbprogramming/pg-c-api-fetching-a-result-set-cpp.html", "programming", "pg-c-api-fetching-a-result-set-cpp"}
- * <li>\salink{send_retrieve_full_blob.cpp, "http://dcx.sybase.com/selectproduct?turl=1201en/dbprogramming/pg-c-api-send-retrieve-full-blob-cpp.html", "programming", "pg-c-api-send-retrieve-full-blob-cpp"}
- * <li>\salink{preparing_statements.cpp, "http://dcx.sybase.com/selectproduct?turl=1201en/dbprogramming/pg-c-api-preparing-statements-cpp.html", "programming", "pg-c-api-preparing-statements-cpp"}
+ * <li>dbcapi_isql.cpp
+ * <li>fetching_a_result_set.cpp
+ * <li>send_retrieve_full_blob.cpp
+ * <li>preparing_statements.cpp
  * </ul>
  */
 typedef struct a_sqlany_data_value
@@ -169,24 +212,26 @@ typedef struct a_sqlany_data_value
  */
 typedef enum a_sqlany_data_direction
 {
-	/// Invalid data direction.
+    /// Invalid data direction.
     DD_INVALID       = 0x0,
-	/// Input-only host variables.
+    /// Input-only host variables.
     DD_INPUT         = 0x1,
-	/// Output-only host variables.
+    /// Output-only host variables.
     DD_OUTPUT        = 0x2,
-	/// Input and output host variables.
+    /// Input and output host variables.
     DD_INPUT_OUTPUT  = 0x3
 } a_sqlany_data_direction;
 
 /** A bind parameter structure used to bind parameter and prepared statements.
  *
- * To view examples of the a_sqlany_bind_param structure in use, see the following topics:
+ * To view examples of the a_sqlany_bind_param structure in use,
+ * see any of the following sample files in the <dfn>sdk\\dbcapi\\examples</dfn> directory
+ * of your SQL Anywhere installation.
  *
  * <ul>
- * <li>\salink{preparing_statements.cpp, "http://dcx.sybase.com/selectproduct?turl=1201en/dbprogramming/pg-c-api-preparing-statements-cpp.html", "programming", "pg-c-api-preparing-statements-cpp"}
- * <li>\salink{send_retrieve_full_blob.cpp, "http://dcx.sybase.com/selectproduct?turl=1201en/dbprogramming/pg-c-api-send-retrieve-full-blob-cpp.html", "programming", "pg-c-api-send-retrieve-full-blob-cpp"}
- * <li>\salink{send_retrieve_part_blob.cpp, "http://dcx.sybase.com/selectproduct?turl=1201en/dbprogramming/pg-c-api-send-retrieve-part-blob-cpp.html", "programming", "pg-c-api-send-retrieve-part-blob-cpp"}
+ * <li>preparing_statements.cpp
+ * <li>send_retrieve_full_blob.cpp
+ * <li>send_retrieve_part_blob.cpp
  * </ul>
  * \sa sqlany_execute()
  */
@@ -203,8 +248,8 @@ typedef struct a_sqlany_bind_param
 /** An enumeration of the native types of values as described by the server.
  *
  * The value types correspond to the embedded SQL data types.
- * For more information on embedded SQL data types, see
- * \salink{Embedded SQL data types, "http://dcx.sybase.com/selectproduct?turl=1201en/dbprogramming/esqlvar.html", "programming", "esqlvar"}.
+ * For more information about embedded SQL data types, see
+ * \salink{Embedded SQL data types, "http://dcx.sybase.com/goto?page=sa160/en/dbprogramming/esqlvar.html", "programming", "esqlvar"}.
  *
  * \hideinitializers
  * \sa sqlany_get_column_info(), a_sqlany_column_info
@@ -219,7 +264,7 @@ typedef enum a_sqlany_native_type
     DT_TIME         	= 388,
     /// Null-terminated character string that is a valid timestamp.
     DT_TIMESTAMP    	= 392,
-    /// Varying length character string, in the CHAR character set, with a two-byte length field. The maximum length is 32765 bytes . When sending data, you must set the length field. When fetching data, the database server sets the length field. The data is not null-terminated or blank-padded.
+    /// Varying length character string, in the CHAR character set, with a two-byte length field. The maximum length is 32765 bytes. When sending data, you must set the length field. When fetching data, the database server sets the length field. The data is not null-terminated or blank-padded.
     DT_VARCHAR      	= 448,
     /// Fixed-length blank-padded character string, in the CHAR character set. The maximum length, specified in bytes, is 32767. The data is not null-terminated. 
     DT_FIXCHAR      	= 452,
@@ -253,6 +298,12 @@ typedef enum a_sqlany_native_type
     DT_UNSBIGINT    	= 620,
     /// 8-bit signed integer.
     DT_BIT          	= 624,
+    /// Null-terminated character string, in the NCHAR character set. The string is blank-padded if the database is initialized with blank-padded strings.
+    DT_NSTRING      	= 628,
+    /// Fixed-length blank-padded character string, in the NCHAR character set. The maximum length, specified in bytes, is 32767. The data is not null-terminated. 
+    DT_NFIXCHAR     	= 632,
+    /// Varying length character string, in the NCHAR character set, with a two-byte length field. The maximum length is 32765 bytes. When sending data, you must set the length field. When fetching data, the database server sets the length field. The data is not null-terminated or blank-padded.
+    DT_NVARCHAR     	= 636,
     /// Long varying length character string, in the NCHAR character set.
     DT_LONGNVARCHAR 	= 640
 } a_sqlany_native_type;
@@ -261,8 +312,13 @@ typedef enum a_sqlany_native_type
  *
  * sqlany_get_column_info() can be used to populate this structure.
  *
- * To view an example of the a_sqlany_column_info structure in use, see 
- * \salink{dbcapi_isql.cpp, "http://dcx.sybase.com/selectproduct?turl=1201en/dbprogramming/pg-c-api-dbcapi-isql-cpp.html", "programming", "pg-c-api-dbcapi-isql-cpp"}.
+ * To view an example of the a_sqlany_column_info structure in use, 
+ * see the following sample file in the <dfn>sdk\\dbcapi\\examples</dfn> 
+ * directory of your SQL Anywhere installation.
+ *
+ * <ul>
+ * <li>dbcapi_isql.cpp
+ * </ul>
  */
 typedef struct a_sqlany_column_info
 {
@@ -281,18 +337,28 @@ typedef struct a_sqlany_column_info
     size_t 			max_size;
     /// Indicates whether a value in the column can be null.
     sacapi_bool			nullable;
+#if _SACAPI_VERSION+0 >= 4
+    /// The name of the table (null-terminated).
+    /// The string can be referenced as long as the result set object is not freed.
+    char *			table_name; 
+    /// The name of the owner (null-terminated).
+    /// The string can be referenced as long as the result set object is not freed.
+    char *			owner_name; 
+#endif
 } a_sqlany_column_info;
 
 /** Gets information about the currently bound parameters.
  *
  * sqlany_get_bind_param_info() can be used to populate this structure.
  *
- * To view examples of the a_sqlany_bind_param_info structure in use, see the following topics:
+ * To view examples of the a_sqlany_bind_param_info structure in use,
+ * see any of the following sample files in the <dfn>sdk\\dbcapi\\examples</dfn>
+ * directory of your SQL Anywhere installation.
  *
  * <ul>
- * <li>\salink{preparing_statements.cpp, "http://dcx.sybase.com/selectproduct?turl=1201en/dbprogramming/pg-c-api-preparing-statements-cpp.html", "programming", "pg-c-api-preparing-statements-cpp"}
- * <li>\salink{send_retrieve_full_blob.cpp, "http://dcx.sybase.com/selectproduct?turl=1201en/dbprogramming/pg-c-api-send-retrieve-full-blob-cpp.html", "programming", "pg-c-api-send-retrieve-full-blob-cpp"}
- * <li>\salink{send_retrieve_part_blob.cpp, "http://dcx.sybase.com/selectproduct?turl=1201en/dbprogramming/pg-c-api-send-retrieve-part-blob-cpp.html", "programming", "pg-c-api-send-retrieve-part-blob-cpp"}
+ * <li>preparing_statements.cpp
+ * <li>send_retrieve_full_blob.cpp
+ * <li>send_retrieve_part_blob.cpp
  * </ul>
  * \sa sqlany_execute()
  */
@@ -306,6 +372,17 @@ typedef struct a_sqlany_bind_param_info
     a_sqlany_data_value		input_value;
     /// Information about the bound output value.
     a_sqlany_data_value		output_value;
+    
+#if _SACAPI_VERSION+0 >= 4
+    /// The native type of the column in the database.
+    a_sqlany_native_type	native_type;
+    /// The precision.
+    unsigned short		precision;
+    /// The scale.
+    unsigned short		scale;
+    /// The maximum size a data value in this column can take.
+    size_t 			max_size;    
+#endif
 } a_sqlany_bind_param_info;
 
 /** Returns metadata information about a column value in a result set.
@@ -313,8 +390,13 @@ typedef struct a_sqlany_bind_param_info
  * sqlany_get_data_info() can be used
  * to populate this structure with information about what was last retrieved by a fetch operation.
  *
- * To view an example of the a_sqlany_data_data_info structure in use, see
- * \salink{send_retrieve_part_blob.cpp, "http://dcx.sybase.com/selectproduct?turl=1201en/dbprogramming/pg-c-api-send-retrieve-part-blob-cpp.html", "programming", "pg-c-api-send-retrieve-part-blob-cpp"}.
+ * To view an example of the a_sqlany_data_info structure in use, 
+ * see the following sample file in the <dfn>sdk\\dbcapi\\examples</dfn> directory
+ * of your SQL Anywhere installation.
+ *
+ * <ul>
+ * <li>send_retrieve_part_blob.cpp
+ * </ul>
  * \sa sqlany_get_data_info()
  */
 typedef struct a_sqlany_data_info
@@ -328,6 +410,66 @@ typedef struct a_sqlany_data_info
     /// This field is only valid after a successful fetch operation.
     size_t 		data_size;
 } a_sqlany_data_info;
+
+/** An enumeration of the callback types.
+ *
+ * The callback types correspond to the embedded SQL callback types.
+ * For more information about embedded SQL callbacks, see
+ * \salink{db_register_a_callback function, "http://dcx.sybase.com/goto?page=sa160/en/dbprogramming/db-register-a-callback-esql.html", "programming", "db-register-a-callback-esql"}.
+ *
+ * \hideinitializers
+ * \sa sqlany_register_callback()
+ */
+typedef enum a_sqlany_callback_type {
+    /// This function is called just before a database request is sent to the server.
+    /// CALLBACK_START is used only on Windows operating systems.
+    CALLBACK_START = 0,
+    /// This function is called repeatedly by the interface library while the database server or client library is busy processing your database request. 
+    CALLBACK_WAIT,
+    /// This function is called after the response to a database request has been received by the DBLIB interface DLL.
+    /// CALLBACK_FINISH is used only on Windows operating systems. 
+    CALLBACK_FINISH,
+    /// This function is called when messages are received from the server during the processing of a request.
+    /// Messages can be sent to the client application from the database server using the SQL MESSAGE statement.
+    /// Messages can also be generated by long running database server statements. 
+    CALLBACK_MESSAGE = 7,
+    /// This function is called when the database server is about to drop a connection because of a liveness timeout,
+    /// through a DROP CONNECTION statement, or because the database server is being shut down.
+    /// The connection name conn_name is passed in to allow you to distinguish between connections.
+    /// If the connection was not named, it has a value of NULL.
+    CALLBACK_CONN_DROPPED,
+    /// This function is called once for each debug message and is passed a null-terminated string containing the text of the debug message.
+    /// A debug message is a message that is logged to the LogFile file. In order for a debug message to be passed to this callback, the LogFile
+    /// connection parameter must be used. The string normally has a newline character (\n) immediately before the terminating null character. 
+    CALLBACK_DEBUG_MESSAGE,
+    /// This function is called when a file transfer requires validation.
+    /// If the client data transfer is being requested during the execution of indirect statements such as from within a stored procedure,
+    /// the client library will not allow a transfer unless the client application has registered a validation callback and the response from
+    /// the callback indicates that the transfer may take place.
+    CALLBACK_VALIDATE_FILE_TRANSFER
+} a_sqlany_callback_type;
+
+/** An enumeration of the message types for the MESSAGE callback.
+ *
+ * For more information about CALLBACK_MESSAGE message types, see
+ * \salink{db_register_a_callback function, "http://dcx.sybase.com/goto?page=sa160/en/dbprogramming/db-register-a-callback-esql.html", "programming", "db-register-a-callback-esql"}.
+ *
+ * \hideinitializers
+ * \sa sqlany_register_callback()
+ */
+typedef enum a_sqlany_message_type {
+    /// The message type was INFO.
+    MESSAGE_TYPE_INFO = 0,
+    /// The message type was WARNING.
+    MESSAGE_TYPE_WARNING,
+    /// The message type was ACTION.
+    MESSAGE_TYPE_ACTION,
+    /// The message type was STATUS.
+    MESSAGE_TYPE_STATUS,
+    /// The message type was PROGRESS.
+    /// This type of message is generated by long running database server statements such as BACKUP DATABASE and LOAD TABLE. 
+    MESSAGE_TYPE_PROGRESS
+} a_sqlany_message_type;
 
 /** Initializes the interface.
  *
@@ -368,7 +510,7 @@ sacapi_bool sqlany_init( const char * app_name, sacapi_u32 api_version, sacapi_u
  * Frees any resources allocated by the API.
  *
  * \sa sqlany_init()
-*/
+ */
 void sqlany_fini();
 #if _SACAPI_VERSION+0 >= 2
     /** Finalize the interface that was created using the specified context.
@@ -395,7 +537,7 @@ a_sqlany_connection * sqlany_new_connection( void );
      * An API connection object needs to be created before a database connection is established. Errors can be retrieved 
      * from the connection object. Only one request can be processed on a connection at a time. In addition,
      * not more than one thread is allowed to access a connection object at a time. If multiple threads attempt
-     * to access a connection object simultaneously, then undefined behaviour/crashes will occur.
+     * to access a connection object simultaneously, then undefined behavior/crashes will occur.
      * \param context A context object that was returned from sqlany_init_ex()
      * \return A connection object
      * \sa sqlany_connect(), sqlany_disconnect(), sqlany_init_ex()
@@ -448,9 +590,9 @@ a_sqlany_connection * sqlany_make_connection( void * arg );
  * sqlany_free_connection( sqlany_conn );
  * </pre>
  *
- * For more information on connecting to a SQL Anywhere database server, see
- * \salink{Connection parameters, "http://dcx.sybase.com/selectproduct?turl=1201en/dbadmin/da-conparm.html", "dbadmin", "da-conparm"} and 
- * \salink{SQL Anywhere database connections, "http://dcx.sybase.com/selectproduct?turl=1201en/dbadmin/da-dbconnections.html", "dbadmin", "da-dbconnections"}.
+ * For more information about connecting to a SQL Anywhere database server, see
+ * \salink{Connection parameters, "http://dcx.sybase.com/goto?page=sa160/en/dbadmin/da-conparm.html", "dbadmin", "da-conparm"} and 
+ * \salink{SQL Anywhere database connections, "http://dcx.sybase.com/goto?page=sa160/en/dbadmin/da-dbconnections.html", "dbadmin", "da-dbconnections"}.
  *
  * \param sqlany_conn A connection object created by sqlany_new_connection().
  * \param str A SQL Anywhere connection string.
@@ -493,7 +635,7 @@ sacapi_bool sqlany_execute_immediate( a_sqlany_connection * sqlany_conn, const c
  * Execution does not happen until sqlany_execute() is 
  * called. The returned statement object should be freed using sqlany_free_stmt().
  *
-* The following statement demonstrates how to prepare a SELECT SQL string:
+ * The following statement demonstrates how to prepare a SELECT SQL string:
  *
  * <pre>
  * char * str;
@@ -584,6 +726,19 @@ sacapi_bool sqlany_reset( a_sqlany_stmt * sqlany_stmt );
  */
 sacapi_bool sqlany_get_bind_param_info( a_sqlany_stmt * sqlany_stmt, sacapi_u32 index, a_sqlany_bind_param_info * info );
 
+#if _SACAPI_VERSION+0 >= 4
+    /** Retrieves information about the parameters that were bound using sqlany_bind_param().
+     *
+     * \param sqlany_stmt A statement prepared successfully using sqlany_prepare().
+     * \param index The index of the parameter. This number should be between 0 and sqlany_num_params() - 1.
+     * \param info A sqlany_bind_param_info buffer to be populated with the bound parameter's information.
+     * \param size The size of the sqlany_bind_param_info structure. As of version 4, new fields have been added to the structure.
+     * \return 1 on success or 0 on failure.
+     * \sa sqlany_bind_param(), sqlany_describe_bind_param(), sqlany_prepare()
+     */
+    sacapi_bool sqlany_get_bind_param_info_ex( a_sqlany_stmt * sqlany_stmt, sacapi_u32 index, a_sqlany_bind_param_info * info, size_t size );
+#endif
+
 /** Executes a prepared statement.
  *
  * You can use sqlany_num_cols() to verify if the executed statement returned a result set.
@@ -624,7 +779,7 @@ sacapi_bool sqlany_execute( a_sqlany_stmt * sqlany_stmt );
 
 /** Executes the SQL statement specified by the string argument and possibly returns a result set.
  *
- * Use this method if you want to prepare and execute a statement,
+ * Use this method to prepare and execute a statement,
  * or instead of calling sqlany_prepare() followed by sqlany_execute().
  *
  * The following example shows how to execute a statement that returns a result set:
@@ -683,7 +838,7 @@ sacapi_bool sqlany_fetch_next( a_sqlany_stmt * sqlany_stmt );
  * If a query (such as a call to a stored procedure) returns multiple result sets, then this function
  * advances from the current result set to the next.
  *
-* The following example demonstrates how to advance to the next result set in a multiple result set query:
+ * The following example demonstrates how to advance to the next result set in a multiple result set query:
  *
  * <pre>
  * stmt = sqlany_execute_direct( sqlany_conn, "call my_multiple_results_procedure()" );
@@ -724,8 +879,8 @@ sacapi_i32 sqlany_num_cols( a_sqlany_stmt * sqlany_stmt );
 /** Returns the number of rows in the result set.
  *
  * By default this function only returns an estimate. To return an exact count, set the row_counts option
- * on the connection. For more information on the row_counts option, see 
- * \salink{row_counts option [database], "http://dcx.sybase.com/selectproduct?turl=1201en/dbadmin/row-counts-option.html", "dbadmin", "row-counts-option"}.
+ * on the connection. For more information about the row_counts option, see 
+ * \salink{row_counts option [database], "http://dcx.sybase.com/goto?page=sa160/en/dbadmin/row-counts-option.html", "dbadmin", "row-counts-option"}.
  *
  * \param sqlany_stmt A statement object that was executed by
  *     sqlany_execute() or sqlany_execute_direct().
@@ -748,7 +903,7 @@ sacapi_i32 sqlany_num_rows( a_sqlany_stmt * sqlany_stmt );
  * value->buffer points to. The data returned in value->buffer is not
  * null-terminated. This function fetches all the returned values from the SQL
  * Anywhere database server.  For example, if the column contains
- * a 2GB blob, this function attempts to allocate enough memory to hold that value.
+ * a blob, this function attempts to allocate enough memory to hold that value.
  * If you do not want to allocate memory, use sqlany_get_data() instead.
  *
  * \param sqlany_stmt A statement object executed by
@@ -772,9 +927,9 @@ sacapi_bool sqlany_get_column( a_sqlany_stmt * sqlany_stmt, sacapi_u32 col_index
  * \param buffer A buffer to be filled with the contents of the column. The buffer pointer must be aligned correctly
  * for the data type copied into it.
  * \param size The size of the buffer in bytes. The function fails
- * if you specify a size greater than 2GB. 
+ * if you specify a size greater than 2^31 - 1.
  * \return The number of bytes successfully copied into the supplied buffer.
- * This number must not exceed 2GB. 
+ * This number must not exceed 2^31 - 1. 
  * 0 indicates that no data remains to be copied.  -1 indicates a failure.
  * \sa sqlany_execute(), sqlany_execute_direct(), sqlany_fetch_absolute(), sqlany_fetch_next()
  */
@@ -801,6 +956,20 @@ sacapi_bool sqlany_get_data_info( a_sqlany_stmt * sqlany_stmt, sacapi_u32 col_in
  * \sa sqlany_execute(), sqlany_execute_direct(), sqlany_prepare()
  */
 sacapi_bool sqlany_get_column_info( a_sqlany_stmt * sqlany_stmt, sacapi_u32 col_index, a_sqlany_column_info * buffer );
+
+#if _SACAPI_VERSION+0 >= 4
+    /** Retrieves column metadata information and fills the a_sqlany_column_info structure with information about the column.
+     *
+     * \param sqlany_stmt A statement object created by sqlany_prepare() or sqlany_execute_direct().
+     * \param col_index The column number between 0 and sqlany_num_cols() - 1.
+     * \param buffer A column info structure to be filled with column information.
+     * \param size The size of the sqlany_column_info structure. As of version 4, new fields have been added to the structure.
+     * \return 1 on success or 0 if the column index is out of range,
+     * or if the statement does not return a result set.
+     * \sa sqlany_execute(), sqlany_execute_direct(), sqlany_prepare()
+     */
+    sacapi_bool sqlany_get_column_info_ex( a_sqlany_stmt * sqlany_stmt, sacapi_u32 col_index, a_sqlany_column_info * buffer, size_t size );
+#endif
 
 /** Commits the current transaction.
  *
@@ -831,7 +1000,7 @@ sacapi_bool sqlany_client_version( char * buffer, size_t len );
 #if _SACAPI_VERSION+0 >= 2
     /** Returns the current client version.
      *
-	 * This method fills the buffer passed with the major, minor, patch, and build number of the client library. 
+     * This method fills the buffer passed with the major, minor, patch, and build number of the client library. 
      * The buffer will be null-terminated.
      *
      * \param context object that was create with sqlany_init_ex()
@@ -845,8 +1014,8 @@ sacapi_bool sqlany_client_version( char * buffer, size_t len );
 
 /** Retrieves the last error code and message stored in the connection object.
  *
- * For more information on SQLCODE error messages, see 
- * \salink{SQL Anywhere error messages sorted by SQLCODE, "http://dcx.sybase.com/selectproduct?turl=1201en/saerrors/sa-errors-by-sqlcode.html", "errors", "sa-errors-by-sqlcode"}.
+ * For more information about SQLCODE error messages, see 
+ * \salink{SQL Anywhere error messages sorted by SQLCODE, "http://dcx.sybase.com/goto?page=sa160/en/saerrors/sa-errors-by-sqlcode.html", "errors", "sa-errors-by-sqlcode"}.
  *
  * \param sqlany_conn A connection object returned from sqlany_new_connection().
  * \param buffer A buffer to be filled with the error message.
@@ -858,8 +1027,8 @@ sacapi_i32 sqlany_error( a_sqlany_connection * sqlany_conn, char * buffer, size_
 
 /** Retrieves the current SQLSTATE.
  *
- * For more information on SQLSTATE error messages, see 
- * \salink{SQL Anywhere error messages sorted by SQLSTATE, "http://dcx.sybase.com/selectproduct?turl=1201en/saerrors/sa-errors-by-sqlstate.html", "errors", "sa-errors-by-sqlstate"}.
+ * For more information about SQLSTATE error messages, see 
+ * \salink{SQL Anywhere error messages sorted by SQLSTATE, "http://dcx.sybase.com/goto?page=sa160/en/saerrors/sa-errors-by-sqlstate.html", "errors", "sa-errors-by-sqlstate"}.
  *
  * \param sqlany_conn A connection object returned from sqlany_new_connection().
  * \param buffer A buffer to be filled with the current 5-character SQLSTATE.
@@ -875,6 +1044,52 @@ size_t sqlany_sqlstate( a_sqlany_connection * sqlany_conn, char * buffer, size_t
  * \sa sqlany_new_connection()
  */
 void sqlany_clear_error( a_sqlany_connection * sqlany_conn );
+
+#if _SACAPI_VERSION+0 >= 3
+    /** Register a callback routine.
+     *
+     * This function can be used to register callback functions.
+     *
+     * A callback type can be any one of the following:
+     * <pre>
+     *     CALLBACK_START
+     *     CALLBACK_WAIT
+     *     CALLBACK_FINISH
+     *     CALLBACK_MESSAGE
+     *     CALLBACK_CONN_DROPPED
+     *     CALLBACK_DEBUG_MESSAGE
+     *     CALLBACK_VALIDATE_FILE_TRANSFER
+     * </pre>
+     *
+     * The following example shows a simple message callback routine and how to register it.
+     * <pre>
+     * void SQLANY_CALLBACK messages(
+     *     a_sqlany_connection *sqlany_conn,
+     *     a_sqlany_message_type msg_type,
+     *     int sqlcode,
+     *     unsigned short length,
+     *     char *msg )
+     * {
+     *     size_t  mlen;
+     *     char    mbuffer[80];
+     * 
+     *     mlen = __min( length, sizeof(mbuffer) );
+     *     strncpy( mbuffer, msg, mlen );
+     *     mbuffer[mlen] = '\0';
+     *     printf( "Message is \"%s\".\n", mbuffer );
+     *     sqlany_sqlstate( sqlany_conn, mbuffer, sizeof( mbuffer ) );
+     *     printf( "SQLCode(%d) SQLState(\"%s\")\n\n", sqlcode, mbuffer );
+     * }
+     * 
+     * api.sqlany_register_callback( sqlany_conn1, CALLBACK_MESSAGE, (SQLANY_CALLBACK_PARM)messages );
+     * </pre>
+     * \param sqlany_conn A connection object with a connection established using sqlany_connect().
+     * \param index Any of the callback types listed below.
+     * \param callback Address of the callback routine.
+     * \return 1 when successful or 0 when unsuccessful.
+     */
+    sacapi_bool sqlany_register_callback( a_sqlany_connection * sqlany_conn, a_sqlany_callback_type index, SQLANY_CALLBACK_PARM callback );
+#endif
 
 #if defined(__cplusplus)
 }
@@ -906,6 +1121,10 @@ void sqlany_clear_error( a_sqlany_connection * sqlany_conn );
 
 /** \example dbcapi_isql.cpp
  * This example shows how to write an ISQL application using dbcapi.
+ */
+
+/** \example callback.cpp
+ * This is an example of how to register and use a callback function.
  */
 
 #endif 

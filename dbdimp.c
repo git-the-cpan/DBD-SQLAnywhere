@@ -1,6 +1,6 @@
-//====================================================
-//
-//      Copyright 2008-2010 iAnywhere Solutions, Inc.
+// ***************************************************************************
+// Copyright (c) 2015 SAP SE or an SAP affiliate company. All rights reserved.
+// ***************************************************************************
 //
 //   Licensed under the Apache License, Version 2.0 (the "License");
 //   you may not use this file except in compliance with the License.
@@ -480,6 +480,7 @@ int
 dbd_st_prepare( SV *sth, imp_sth_t *imp_sth, char *statement, SV *attribs )
 /*************************************************************************/
 {
+    dTHX;
     D_imp_dbh_from_sth;
     char		*_statement;
     SACAPI		*sacapi = imp_dbh->sacapi;
@@ -488,7 +489,9 @@ dbd_st_prepare( SV *sth, imp_sth_t *imp_sth, char *statement, SV *attribs )
     dbd_preparse( imp_sth, statement );
     _statement = (char *)imp_sth->sql_statement;
 
-//PerlIO_printf( PerlIO_stderr(), "\n\nPrepare: '%s'\n\n", _statement ); fflush(stdout);
+    if( DBIS->debug >= 2 ) {
+	PerlIO_printf( DBILOGFP, "\n\nPrepare: '%s'\n\n", _statement );
+    }
     imp_sth->statement = sacapi->api.sqlany_prepare( imp_dbh->conn, _statement );
     if( imp_sth->statement == NULL ) {
 	dTHX;
@@ -511,7 +514,6 @@ dbd_preparse( imp_sth_t *imp_sth, char *statement )
 /*************************************************/
 {
     dTHX;
-    char	quote = '\0';
     char 	*src, *start, *dest;
     phs_t 	phs_tpl;
     SV 		*phs_sv;
@@ -532,77 +534,106 @@ dbd_preparse( imp_sth_t *imp_sth, char *statement )
     src  = statement;
     dest = imp_sth->sql_statement;
     while( *src ) {
-	if( *src == '\'' || *src == '\"' ) {
-	    if( quote ) {
+	if( (*src == '-' && src[1] == '-') ||
+	    (*src == '/' && src[1] == '/') ) {
+	    // Skip to end of line
+	    *dest++ = *src++;
+	    *dest++ = *src++;
+	    while( *src ) {
+		if( *src == '\n' ) {
+		    *dest++ = *src++;
+		    break;
+		}
+		*dest++ = *src++;
+	    }
+	} else if( *src == '/' && src[1] == '*' ) {
+	    // Skip to end of comment
+	    *dest++ = *src++;
+	    *dest++ = *src++;
+	    while( *src ) {
+		if( *src == '*' && src[1] == '/' ) {
+		    *dest++ = *src++;
+		    *dest++ = *src++;
+		    break;
+		}
+		*dest++ = *src++;
+	    }
+	} else if( *src == '\'' || *src == '\"' ) {
+	    char quote = *src;
+	    *dest++ = *src++;
+	    while( *src ) {
 		if( *src == quote ) {
-		    if( src[1] == quote ) {
+		    *dest++ = *src++;
+		    if( *src == quote ) {
 			*dest++ = *src++;
 		    } else {
-			quote = '\0';
+			break;
 		    }
+		} else {
+		    *dest++ = *src++;
 		}
-	    } else {
-		quote = *src;
 	    }
-	}
-	if( (*src != ':' && *src != '?') || quote ) {
+	} else if( *src == ':' || *src == '?' ) {
+	    start = dest;			/* save name inc colon	*/ 
 	    *dest++ = *src++;
-	    continue;
-	}
-	start = dest;			/* save name inc colon	*/ 
-	*dest++ = *src++;
-	ph_name = NULL;
-	ph_name_len = 0;
-	if( *start == '?' ) {		/* X/Open standard	*/
-	    style = 3;
-	} else if( isDIGIT(*src) ) {	/* ':1'		*/
-	    *start = '?';
-	    
-	    idx = atoi( src );
-	    if( idx <= 0 ) {
-		croak( "Placeholder :%d must be a positive number", idx );
+	    ph_name = NULL;
+	    ph_name_len = 0;
+	    if( *start == '?' ) {		/* X/Open standard	*/
+		style = 3;
+	    } else if( isDIGIT(*src) ) {	/* ':1'		*/
+		*start = '?';
+
+		idx = atoi( src );
+		if( idx <= 0 ) {
+		    croak( "Placeholder :%d must be a positive number", idx );
+		}
+		if( idx != curr_ordinal ) {
+		    croak( "Cannot handle unordered ':numeric' placeholders" );
+		}
+		while( isDIGIT(*src) ) {
+		    ++src;
+		}
+		style = 1;
+	    } else if( isALNUM(*src) ) {	/* ':foo'	*/
+		*start = '?';
+		ph_name = src-1;
+		++ph_name_len;		// for ':'
+		while( isALNUM(*src) ) {	/* includes '_'	*/
+		    ++ph_name_len;
+		    ++src;
+		}
+		style = 2;
+	    } else {			/* perhaps ':=' PL/SQL construct */
+		continue;
 	    }
-	    if( idx != curr_ordinal ) {
-		croak( "Cannot handle unordered ':numeric' placeholders" );
+	    *dest = '\0';			/* handy for debugging	*/
+	    if( laststyle && style != laststyle ) {
+		croak( "Can't mix placeholder styles (%d/%d)", style, laststyle );
 	    }
-	    while( isDIGIT(*src) ) {
-		++src;
+	    laststyle = style;
+	    if( imp_sth->bind_names == NULL ) {
+		imp_sth->bind_names = newHV();
 	    }
-	    style = 1;
-	} else if( isALNUM(*src) ) {	/* ':foo'	*/
-	    *start = '?';
-	    ph_name = src-1;
-	    ++ph_name_len;		// for ':'
-	    while( isALNUM(*src) ) {	/* includes '_'	*/
-		++ph_name_len;
-		++src;
+	    phs_tpl.ordinal = curr_ordinal;
+	    phs_tpl.sv = &PL_sv_undef;
+	    phs_sv = newSVpv( (char*)&phs_tpl, sizeof(phs_tpl) );
+	    if( ph_name == NULL ) {
+		ph_name = _ph_name_buf;
+		sprintf( ph_name, ":p%d", curr_ordinal );
+		ph_name_len = strlen( ph_name );
 	    }
-	    style = 2;
-	} else {			/* perhaps ':=' PL/SQL construct */
-	    continue;
-	}
-	*dest = '\0';			/* handy for debugging	*/
-	if( laststyle && style != laststyle ) {
-	    croak( "Can't mix placeholder styles (%d/%d)", style, laststyle );
-	}
-	laststyle = style;
-	if( imp_sth->bind_names == NULL ) {
-	    imp_sth->bind_names = newHV();
-	}
-	phs_tpl.ordinal = curr_ordinal;
-	phs_tpl.sv = &PL_sv_undef;
-	phs_sv = newSVpv( (char*)&phs_tpl, sizeof(phs_tpl) );
-	if( ph_name == NULL ) {
-	    ph_name = _ph_name_buf;
-	    sprintf( ph_name, ":p%d", curr_ordinal );
-	    ph_name_len = strlen( ph_name );
-	}
-	hv_store( imp_sth->bind_names, ph_name, (I32)ph_name_len,
-		  phs_sv, 0 );
-	++curr_ordinal;
-	/* warn("bind_names: '%s'\n", start);	*/
+	    hv_store( imp_sth->bind_names, ph_name, (I32)ph_name_len,
+		      phs_sv, 0 );
+	    ++curr_ordinal;
+	    /* warn("bind_names: '%s'\n", start);	*/
+	} else {
+	    *dest++ = *src++;
+	} 
     }
     *dest = '\0';
+    if( DBIS->debug >= 2 ) {
+	PerlIO_printf( DBILOGFP, "\nPreparse transformed statement: '%s'\n", imp_sth->sql_statement );
+    }
     if( imp_sth->bind_names ) {
 	imp_sth->num_bind_params_scanned = (int)HvKEYS(imp_sth->bind_names);
 	if( DBIS->debug >= 2 ) {
@@ -641,7 +672,7 @@ dbd_bind_ph( SV		*sth,
 
     // FIXME: Why croak() and not just report an error?
     if( SvTYPE(newvalue) > SVt_PVLV ) { /* hook for later array logic	*/
-	croak( "Can't bind a non-scalar value", neatsvpv(newvalue,0) );
+	croak( "Can't bind a non-scalar value" );
     }
 
     if( SvROK(newvalue) && !IS_DBI_HANDLE(newvalue) ) {
@@ -671,7 +702,7 @@ dbd_bind_ph( SV		*sth,
     }
 
     if( is_inout && SvREADONLY( newvalue ) ) {
-	croak( PL_no_modify );
+	croak( "%s", PL_no_modify );
     }
 
     phs = (phs_t *)((void*)SvPVX(*svp));		/* placeholder struct	*/
@@ -767,12 +798,20 @@ assign_from_result_set( pTHX_ SV *sth, imp_sth_t *imp_sth, SV *sv, int index )
 		break;
 
 	    case A_VAL64		:
+#if defined( _MSC_VER )
+		sprintf( numbuf, "%I64d", *(__int64 *)val.buffer );
+#else
 		sprintf( numbuf, "%lld", *(long long *)val.buffer );
+#endif
 		sv_setpv( sv, numbuf );
 		break;
 
 	    case A_UVAL64		:
+#if defined( _MSC_VER )
+		sprintf( numbuf, "%I64u", *(unsigned __int64 *)val.buffer );
+#else
 		sprintf( numbuf, "%llu", *(unsigned long long *)val.buffer );
+#endif
 		sv_setpv( sv, numbuf );
 		break;
 
@@ -1022,7 +1061,7 @@ dbd_st_fetch( SV *sth, imp_sth_t *imp_sth )
 	return( Nullav );
     }
 
-    if( imp_sth->statement == NULL ) {
+    if( imp_sth->statement == NULL || DBIc_NUM_FIELDS(imp_sth) == 0 ) {
 	return( Nullav );	// we figured it was just an EXECUTE
     }
 
@@ -1067,6 +1106,67 @@ dbd_st_fetch( SV *sth, imp_sth_t *imp_sth )
     return( av );
 }
 
+int
+dbd_st_more_results( SV *sth, imp_sth_t *imp_sth )
+/************************************************/
+{
+    dTHX;
+    D_imp_dbh_from_sth;
+    int 			debug = DBIS->debug;
+    int				rescode;
+    int				sqlcode;
+    SACAPI			*sacapi = imp_dbh->sacapi;
+
+    /* Check that execute() was executed sucessfuly. */
+    if( !DBIc_ACTIVE(imp_sth) ) {
+	ssa_error( aTHX_ sth, NULL, SQLE_CURSOR_NOT_OPEN, "no statement executing" );
+	return( 0 );
+    }
+
+    if( imp_sth->statement == NULL ) {
+	return( 0 );	// we figured it was just an EXECUTE
+    }
+
+    DBIc_NUM_FIELDS(imp_sth) =  0;
+    hv_delete((HV*)SvRV(sth), "NAME", 4, G_DISCARD);
+    hv_delete((HV*)SvRV(sth), "NULLABLE", 8, G_DISCARD);
+    hv_delete((HV*)SvRV(sth), "NUM_OF_FIELDS", 13, G_DISCARD);
+    hv_delete((HV*)SvRV(sth), "PRECISION", 9, G_DISCARD);
+    hv_delete((HV*)SvRV(sth), "SCALE", 5, G_DISCARD);
+    hv_delete((HV*)SvRV(sth), "TYPE", 4, G_DISCARD);
+    
+    // printf( "More_results (%p)\n", imp_sth ); fflush( stdout );
+    rescode = sacapi->api.sqlany_get_next_result( imp_sth->statement );
+    sqlcode = sacapi->api.sqlany_error( imp_dbh->conn, NULL, 0 );
+
+    // rescode == 0 means no more results
+    if( rescode == 0 ) {
+	if( sqlcode == SQLE_NOTFOUND || sqlcode == SQLE_PROCEDURE_COMPLETE ) {
+	    sv_setpv( DBIc_ERR(imp_sth), "" );	/* just end-of-results	*/
+	    return( -1 );
+	} else {
+	    ssa_error( aTHX_ sth, imp_dbh->conn, SQLE_ERROR, "more_results failed" );
+	    if( debug >= 3 ) {
+		PerlIO_printf( DBILOGFP, "    dbd_st_more_results failed, rc=%d", sqlcode );
+	    }
+	    return( 0 );
+	}
+    }
+
+    DBIc_NUM_FIELDS(imp_sth) = sacapi->api.sqlany_num_cols( imp_sth->statement );
+      DBIS->set_attr_k(sth, sv_2mortal(newSVpvn("NUM_OF_FIELDS",13)), 0,
+          sv_2mortal(newSViv(sacapi->api.sqlany_num_cols( imp_sth->statement ))));
+
+    if( sqlcode > 0 ) {
+	// Just a warning
+	ssa_error( aTHX_ sth, imp_dbh->conn, SQLE_ERROR, "warning during more_results" );
+	if( DBIS->debug >= 3 ) {
+	    PerlIO_printf( DBILOGFP, "    dbd_st_more_results warning, rc=%d", sqlcode );
+	}
+    }
+
+    return( 1 );
+}
 
 int
 dbd_st_blob_read( SV *sth, imp_sth_t *imp_sth,
@@ -1150,7 +1250,6 @@ dbd_st_blob_read( SV *sth, imp_sth_t *imp_sth,
     }
     return( 1 );
 }
-
 
 int
 dbd_st_rows( SV *sth, imp_sth_t *imp_sth )
@@ -1340,8 +1439,10 @@ dbd_st_FETCH_attrib( SV *sth, imp_sth_t *imp_sth, SV *keysv )
 	    sacapi->api.sqlany_get_column_info( imp_sth->statement, i, &cinfo );
 	    switch( cinfo.native_type ) {
 		case DT_DECIMAL	:
-		case DT_BASE100	:
 		    av_store( av, i, newSViv( cinfo.scale ) );
+		    break;
+		default:
+		    // Avoid compiler warnings
 		    break;
 	    }
 	}
@@ -1352,7 +1453,6 @@ dbd_st_FETCH_attrib( SV *sth, imp_sth_t *imp_sth, SV *keysv )
 	    sacapi->api.sqlany_get_column_info( imp_sth->statement, i, &cinfo );
 	    switch( cinfo.native_type ) {
 		case DT_DECIMAL	:
-		case DT_BASE100	:
 		    av_store( av, i, newSViv( cinfo.precision ) );
 		    break;
 		case DT_FLOAT	:

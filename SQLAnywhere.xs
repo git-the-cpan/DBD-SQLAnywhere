@@ -1,6 +1,6 @@
-//====================================================
-//
-//      Copyright 2008-2010 iAnywhere Solutions, Inc.
+// ***************************************************************************
+// Copyright (c) 2015 SAP SE or an SAP affiliate company. All rights reserved.
+// ***************************************************************************
 //
 //   Licensed under the Apache License, Version 2.0 (the "License");
 //   you may not use this file except in compliance with the License.
@@ -91,5 +91,43 @@ DESTROY( drh )
     CODE:
     dbd_dr_destroy( drh );
     
+int
+more_results(sth)
+    SV *	sth
+    CODE:
+{
+    D_imp_sth(sth);
+    if (dbd_st_more_results(sth, imp_sth))
+    {
+	RETVAL=1;
+    }
+    else
+    {
+	RETVAL=0;
+    }
+}
+    OUTPUT:
+	RETVAL
+
+MODULE = DBD::SQLAnywhere    PACKAGE = DBD::SQLAnywhere::st
+
+int
+more_results(sth)
+    SV *	sth
+    CODE:
+{
+    int results;
+    D_imp_sth(sth);
+    results = dbd_st_more_results(sth, imp_sth);
+    if(results > 0) {
+	XSRETURN_YES;
+    } else if(results == 0) {
+	XSRETURN_NO;
+    } else {
+	XSRETURN_UNDEF;
+    }
+}
+    OUTPUT:
+	RETVAL
 
 # end of SQLAnywhere.xs

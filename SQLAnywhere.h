@@ -1,6 +1,6 @@
-//====================================================
-//
-//      Copyright 2008-2010 iAnywhere Solutions, Inc.
+// ***************************************************************************
+// Copyright (c) 2015 SAP SE or an SAP affiliate company. All rights reserved.
+// ***************************************************************************
 //
 //   Licensed under the Apache License, Version 2.0 (the "License");
 //   you may not use this file except in compliance with the License.
@@ -69,6 +69,7 @@ int  dbd_st_readblob _((SV *sth, imp_sth_t *imp_sth, int field, long offset, lon
 			SV *destrv, long destoffset));
 int  dbd_st_STORE_attrib _((SV *sth, imp_sth_t *imp_sth, SV *keysv, SV *valuesv));
 SV  *dbd_st_FETCH_attrib _((SV *sth, imp_sth_t *imp_sth, SV *keysv));
+int dbd_st_more_results _(( SV *sth, imp_sth_t *imp_sth ));
 
 
 /* end of SQLAnywhere.h */
