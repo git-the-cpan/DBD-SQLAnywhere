@@ -53,6 +53,8 @@ my %opts = (
     },
     PM => { 'SQLAnywhere.pm' => '$(INST_LIBDIR)/SQLAnywhere.pm',
 	    'lib/DBD/SQLAnywhere/GetInfo.pm' => 'blib/lib/DBD/SQLAnywhere/GetInfo.pm' },
+
+    CONFIGURE_REQUIRES => { "DBI" => "1.51" },
 );
 
 if ($ExtUtils::MakeMaker::VERSION >= 5.43) {

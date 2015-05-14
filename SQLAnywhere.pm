@@ -30,7 +30,7 @@ use warnings;
     use DynaLoader ();
     use Exporter ();
 
-    our $VERSION = '2.12';
+    our $VERSION = '2.13';
     our @ISA = qw(DynaLoader Exporter);
     our %EXPORT_TAGS = (
 	asa_types => [ qw(
@@ -168,13 +168,22 @@ use warnings;
 	$sth;
     }
 
-
     sub ping {
-	my($dbh) = @_;
-	# we know that DBD::SQLAnywhere prepare does a describe so this will
-	# actually talk to the server and is a valid and cheap test.
-	return 1 if $dbh->prepare("select 1");
-	return 0;
+	my( $dbh ) = @_;
+
+	# Doing a prepare() will actually talk to the server and so this
+	# is a cheap test.
+	# Strictly speaking, the prepare() could fail due to an error
+	# reported from the server (eg. if we exceed the prepared statement
+	# limit) but we don't have access to the ping facility through DBCAPI
+	# so this is usually a valid test.
+	my $rv = eval { $dbh->prepare( "select 1" ); };
+	my $alive = ( defined( $rv ) ? 1 : 0 );
+
+	# Suppress the error for ping() -- it should just return a boolean without reporting error
+	$dbh->set_err( undef, undef );
+
+	return( $alive );
     }
 
 
